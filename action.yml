@@ -23,6 +23,10 @@ inputs:
     description: "Primary action dotnet-format should perform (check for errors or apply fixes)"
     required: true
     default: "check"
+    
+  severity:
+    description: "Minimum severity level to check while formatting: error, warn (default), info"
+    required: false
 
   only-changed-files:
     description: "Only changed files in the current pull request should be formatted"

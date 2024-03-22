@@ -14046,12 +14046,14 @@ const core_1 = __nccwpck_require__(2186);
 const dotnet_1 = __nccwpck_require__(9870);
 const version_1 = __nccwpck_require__(1946);
 async function check() {
+    const severity = (0, core_1.getInput)("severity");
     const onlyChangedFiles = (0, core_1.getBooleanInput)("only-changed-files");
     const failFast = (0, core_1.getBooleanInput)("fail-fast");
     const version = (0, core_1.getInput)("version", { required: true });
     const dotnetFormatVersion = (0, version_1.checkVersion)(version);
     const result = await (0, dotnet_1.format)(dotnetFormatVersion)({
-        dryRun: true,
+        severity: severity || "warn",
+        onlyCheck: true,
         onlyChangedFiles,
     });
     (0, core_1.setOutput)("has-changes", result.toString());
@@ -14062,11 +14064,13 @@ async function check() {
 }
 exports.check = check;
 async function fix() {
+    const severity = (0, core_1.getInput)("severity");
     const onlyChangedFiles = (0, core_1.getBooleanInput)("only-changed-files");
     const version = (0, core_1.getInput)("version", { required: true });
     const dotnetFormatVersion = (0, version_1.checkVersion)(version);
     const result = await (0, dotnet_1.format)(dotnetFormatVersion)({
-        dryRun: false,
+        severity: severity || "warn",
+        onlyCheck: false,
         onlyChangedFiles,
     });
     (0, core_1.setOutput)("has-changes", result.toString());
@@ -14100,9 +14104,12 @@ function formatOnlyChangedFiles(onlyChangedFiles) {
 }
 async function formatVersion3(options) {
     const execOptions = { ignoreReturnCode: true };
-    const dotnetFormatOptions = ["format", "--check"];
-    if (options.dryRun) {
-        dotnetFormatOptions.push("--dry-run");
+    const dotnetFormatOptions = ["format", "--no-restore"];
+    if (options.onlyCheck) {
+        dotnetFormatOptions.push("--verify-no-changes");
+    }
+    if (options.severity) {
+        dotnetFormatOptions.push("--severity", options.severity);
     }
     if (formatOnlyChangedFiles(options.onlyChangedFiles)) {
         const filesToCheck = await (0, files_1.getPullRequestFiles)();
@@ -14112,7 +14119,7 @@ async function formatVersion3(options) {
             (0, core_1.debug)("No files found for formatting");
             return false;
         }
-        dotnetFormatOptions.push("--files", filesToCheck.join(","));
+        dotnetFormatOptions.push("--include", filesToCheck.join(" "));
     }
     const dotnetPath = await (0, io_1.which)("dotnet", true);
     const dotnetResult = await (0, exec_1.exec)(`"${dotnetPath}"`, dotnetFormatOptions, execOptions);
